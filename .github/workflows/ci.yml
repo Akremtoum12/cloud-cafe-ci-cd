@@ -33,9 +33,21 @@ jobs:
           pip install ruff
           ruff check src
 
+      - name: Create CI .env file
+        run: |
+          cat > .env << 'EOF'
+          DB_HOST=db
+          DB_PORT=5432
+          DB_NAME=cafe_db
+          DB_USER=postgres
+          DB_PASSWORD=postgres
+          EOF
+
+
       - name: Build and start services
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
+            docker compose up -d --build
+
 
       - name: Wait for API to be ready
         shell: bash
@@ -53,6 +65,9 @@ jobs:
                   time.sleep(2)
           raise SystemExit("API did not become ready in time")
           PY
+      - name: Initialise database schema
+        run: |
+            docker compose exec -T web python init_db.py
 
       - name: Run tests
         run: |
